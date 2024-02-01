@@ -59,9 +59,42 @@ fn main() {
             eprintln!("Falha ao adquirir as interfaces wireless: {:?", e);
             unsafe {
                 WlanCloseHandle(wlan_handle);
+                std::process::exit(1);
             }
         }
     };
 
-    println!("Hello, world!");
+let interfaces_list = unsafe{
+    std::slice::from_raw_parts(
+        (*interface_ptr).InterfaceInfo.as_ptr(),
+        (interface_ptr).dwNumberOfItems as usize,
+
+    )
+};
+
+for interface_info in interfaces_list{
+    let interface_description = match parse_utf16_slice(interface_info.strInterfaceDescription.as_slice()) {
+        Some(name) => name,
+        None => {
+            eprint!("Não pegou a descrição da interface";);
+            continue;
+        }
+    };
+
+    let wlan_profile_ptr = match grab_interface_profiles(wlan_handle, &interface_info.InterfaceGuid){
+        Ok(profiles) => profiles,
+        Err(_e) => {
+            eprint!("Não pegou as profiles";);
+            continue;
+        }
+        
+    };
+
+        let wlan_profile_list = unsafe {std::slice::from_raw_parts(
+      (*wlan_profile_ptr).ProfileInfo.as_ptr(),
+       (*wlan_profile_ptr).dwNumberOfItems as usize(),
+            );};
+
+    }
+
 }
