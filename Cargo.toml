@@ -9,9 +9,10 @@ edition = "2021"
 version = "0.52"
 
 features = [
+    "Data_Xml_Dom",
     "Win32_Foundation",
-    "Foundation_Colections",
-    "Win32_NetworkManagement_Wifi"
+    "Foundation_Collections",
+    "Win32_NetworkManagement_WiFi",
     "Win32_Security",
     "Win32_System_Com",
     "Win32_System_Threading",
