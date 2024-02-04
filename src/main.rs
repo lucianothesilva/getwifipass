@@ -1,4 +1,3 @@
-use std::thread::Result;
 use std::{ffi::OsString, os::windows::ffi::OsStringExt};
 use std::os::windows::raw::HANDLE;
 
@@ -6,7 +5,7 @@ use windows::{
     core::{GUID, HSTRING, PCWSTR, PWSTR},
     Data::Xml::Dom::{XmlDocument, XmlElement},
     Win32::{
-        Foundation::{ERROR_SUCCESS, INVALID_HANDLE_VALUE, WIN32_ERROR},
+        Foundation::{INVALID_HANDLE_VALUE, WIN32_ERROR},
         NetworkManagement::WiFi::{
             WlanCloseHandle,
             WlanEnumInterfaces,
@@ -27,14 +26,10 @@ fn open_wlan_handle(api_version: u32) -> Result<HANDLE, windows::core::Error> {
     let mut negotiated_vesion: i32 = 0;
     let mut wlan_handle = INVALID_HANDLE_VALUE;
 
-    let result = unsafe {
-        WlanOpenHandle(
-            api_version,
+    let result = unsafe {WlanOpenHandle(api_version,
             None,
             &mut negotiated_vesion,
-            &mut wlan_handle,
-        )
-    };
+            &mut wlan_handle,)};
 
     WIN32_ERROR(result)?;
     Ok(wlan_handle)
@@ -257,6 +252,6 @@ fn main() {
 
     unsafe {
         WlanFreeMemory(interface_ptr.cast());
-        WlanFreeMemory(wlan_handle);
+        WlanFreeMemory(wlan_handle, None);
     }
 }
