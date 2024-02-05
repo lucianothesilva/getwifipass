@@ -1,6 +1,5 @@
 use std::{ffi::OsString, os::windows::ffi::OsStringExt};
 use std::os::windows::raw::HANDLE;
-
 use windows::{
     core::{GUID, HSTRING, PCWSTR, PWSTR},
     Data::Xml::Dom::{XmlDocument, XmlElement},
@@ -23,7 +22,7 @@ use windows::{
 };
 
 fn open_wlan_handle(api_version: u32) -> Result<HANDLE, windows::core::Error> {
-    let mut negotiated_vesion: i32 = 0;
+    let mut negotiated_vesion= 0;
     let mut wlan_handle = INVALID_HANDLE_VALUE;
 
     let result = unsafe {WlanOpenHandle(api_version,
@@ -31,8 +30,8 @@ fn open_wlan_handle(api_version: u32) -> Result<HANDLE, windows::core::Error> {
             &mut negotiated_vesion,
             &mut wlan_handle,)};
 
-    WIN32_ERROR(result)?;
-    Ok(wlan_handle)
+    WIN32_ERROR(result);
+    Ok(wlan_handle);
 }
 
 fn enum_wlan_interfaces(handle: HANDLE) -> Result<*mut WLAN_INTERFACE_INFO_LIST, windows::core::Error> {
@@ -40,7 +39,7 @@ fn enum_wlan_interfaces(handle: HANDLE) -> Result<*mut WLAN_INTERFACE_INFO_LIST,
 
     let result = unsafe { WlanEnumInterfaces(handle, None, &mut interface_ptr) };
 
-    WIN32_ERROR(result)?;
+    WIN32_ERROR(result);
     Ok(interface_ptr)
 }
 
@@ -56,10 +55,9 @@ fn grab_interface_profiles(
             interface_guid,
             None,
             &mut wlan_profiles_ptr,
-        )
-    };
+        ) };
 
-    WIN32_ERROR(result)?;
+    WIN32_ERROR(result).ok()?;
 
     Ok(wlan_profiles_ptr)
 }
@@ -72,29 +70,29 @@ fn parse_utf16_slice(string_slice: &[u16]) -> Option<OsString> {
 
 fn load_xml_data(xml: &OsString) -> Result<XmlDocument, windows::core::Error> {
     let xml_document = XmlDocument::new()?;
-    xml_document.load_xml(&HSTRING::from(xml))?;
+    xml_document.LoadXml(&HSTRING::from(xml))?;
     Ok(xml_document)
 }
 
 fn traverse_xml_tree(xml: &XmlElement, node_path: &[&str]) -> Option<String> {
-    let mut subtree_list = xml.child_nodes()?;
+    let mut subtree_list = xml.ChildNodes()?;
     let last_node_name = node_path.last()?;
 
     'node_traverse: for node in node_path {
         let node_name = OsString::from_wide(&node.encode_utf16().collect::<Vec<u16>>());
 
         for subtree_value in &subtree_list {
-            let element_name = match subtree_value.node_name() {
+            let element_name = match subtree_value.NodeName() {
                 Ok(name) => name,
                 Err(_) => continue,
             };
 
             if element_name.to_os_string() == *node {
                 if element_name.to_os_string().to_string_lossy().to_string() == *last_node_name {
-                    return Some(subtree_value.inner_text().ok()?.to_string());
+                    return Some(subtree_value.InnerText().ok()?.to_string());
                 }
 
-                subtree_list = subtree_value.child_nodes()?;
+                subtree_list = subtree_value.ChildNodes().ok()?;
                 continue 'node_traverse;
             }
         }
@@ -108,11 +106,10 @@ fn get_profile_xml(
     interface_guid: &GUID,
     profile_name: &OsString,
 ) -> Result<OsString, windows::core::Error> {
-    let mut profile_xml_data = PWSTR::null();
+    let mut profile_xml_data = PWSTR::null(); 
     let mut profile_get_flags = WLAN_PROFILE_GET_PLAINTEXT_KEY;
 
-    let result = unsafe {
-        WlanGetProfile(
+    let result = unsafe {WlanGetProfile(
             handle,
             interface_guid,
             PCWSTR(HSTRING::from(*profile_name).as_ptr()),
@@ -123,7 +120,7 @@ fn get_profile_xml(
         )
     };
 
-    WIN32_ERROR(result)?;
+    WIN32_ERROR(result);
 
     let xml_string = match unsafe { profile_xml_data.to_hstring() } {
         Ok(data) => data,
@@ -204,7 +201,7 @@ fn main() {
                 }
             };
 
-            let root = match xml_document.document_element() {
+            let root = match xml_document.DocumentElement() {
                 Ok(root) => root,
                 Err(_e) => {
                     eprintln!("Falha ao extrair documento Root XML");
@@ -252,6 +249,6 @@ fn main() {
 
     unsafe {
         WlanFreeMemory(interface_ptr.cast());
-        WlanFreeMemory(wlan_handle, None);
+       // WlanFreeMemory(wlan_handle, None);
     }
 }
